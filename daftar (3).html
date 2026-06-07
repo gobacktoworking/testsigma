@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Daftar - Sigma Club</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body { font-family: 'Trebuchet MS', sans-serif; }
+        /* Style CSS sesuai LKPD — tambahkan pada style.css di folder login */
+        .form-input {
+            width: 100%;
+            background: #18181b;
+            border: 1px solid #3f3f46;
+            padding: 0.85rem 1rem;
+            border-radius: 0.85rem;
+            color: #fff;
+            outline: none;
+            transition: border-color 0.3s;
+            font-size: 0.9rem;
+        }
+        .form-input:focus { border-color: #facc15; }
+        .form-label {
+            display: block;
+            font-size: 10px;
+            font-weight: 900;
+            color: #71717a;
+            margin-bottom: 6px;
+            text-transform: uppercase;
+            letter-spacing: 0.2em;
+        }
+        @keyframes slideUp {
+            from { opacity: 0; transform: translateY(24px); }
+            to   { opacity: 1; transform: translateY(0); }
+        }
+        .card-daftar { animation: slideUp 0.5s ease forwards; }
+
+        /* Indikator kekuatan kata sandi */
+        .kekuatan-bar { height: 4px; border-radius: 99px; transition: width 0.4s, background-color 0.4s; }
+    </style>
+</head>
+<body class="bg-black text-white min-h-screen flex flex-col">
+
+    <!-- Navigasi -->
+    <nav class="p-8">
+        <a href="index.html" class="text-yellow-400 font-black text-2xl italic">SIGMACLUB</a>
+    </nav>
+
+    <div class="flex-grow flex items-center justify-center p-4 pb-10">
+        <div class="card-daftar bg-zinc-950 p-10 rounded-[2rem] border border-zinc-800 w-full max-w-md shadow-2xl">
+
+            <h2 class="text-3xl font-black italic text-yellow-400 uppercase mb-2">Pendaftaran Elit</h2>
+            <p class="text-zinc-500 text-xs mb-8 italic">Tinggalkan kasta lamamu. Bergabunglah dengan kami.</p>
+
+            <!-- ============================================================
+                 FORM REGISTER — id="registerForm"
+                 Input: id="username", id="email", id="password"
+                 Sesuai syarat LKPD website pribadi
+            ============================================================ -->
+            <form id="registerForm" onsubmit="return false;">
+                <div class="space-y-4">
+
+                    <!-- Nama Pengguna -->
+                    <div>
+                        <label for="username" class="form-label">Nama Pengguna</label>
+                        <input type="text" id="username" name="username"
+                               placeholder="Pilih nama pengguna unikmu..."
+                               class="form-input" autocomplete="username" required>
+                        <p id="pesan-nama" class="text-[10px] mt-1 text-zinc-600 italic"></p>
+                    </div>
+
+                    <!-- Email -->
+                    <div>
+                        <label for="email" class="form-label">Email Terdaftar</label>
+                        <input type="email" id="email" name="email"
+                               placeholder="nama@domain.com"
+                               class="form-input" autocomplete="email" required>
+                    </div>
+
+                    <!-- Kata Sandi -->
+                    <div>
+                        <label for="password" class="form-label">Kata Sandi</label>
+                        <input type="password" id="password" name="password"
+                               placeholder="Minimal 6 karakter..."
+                               class="form-input" autocomplete="new-password"
+                               oninput="periksaKataSandi(this.value)" required>
+                        <!-- Indikator kekuatan kata sandi -->
+                        <div class="flex gap-1 mt-2">
+                            <div id="bar1" class="kekuatan-bar flex-1 bg-zinc-800"></div>
+                            <div id="bar2" class="kekuatan-bar flex-1 bg-zinc-800"></div>
+                            <div id="bar3" class="kekuatan-bar flex-1 bg-zinc-800"></div>
+                        </div>
+                        <p id="pesan-sandi" class="text-[10px] mt-1 text-zinc-600 italic"></p>
+                    </div>
+
+                    <!-- Konfirmasi Sandi -->
+                    <div>
+                        <label for="konfirmasi" class="form-label">Konfirmasi Kata Sandi</label>
+                        <input type="password" id="konfirmasi" name="konfirmasi"
+                               placeholder="Ulangi kata sandi..."
+                               class="form-input" required>
+                    </div>
+
+                    <button type="submit" id="tombolDaftar"
+                            class="w-full bg-yellow-400 hover:bg-yellow-500 text-black font-black py-4 rounded-xl transition-all uppercase text-sm mt-2 shadow-lg shadow-yellow-400/20">
+                        Resmikan Identitas
+                    </button>
+                </div>
+            </form>
+
+            <p class="text-center mt-6 text-xs text-zinc-600">
+                Sudah punya akun? <a href="masuk.html" class="text-yellow-400 font-bold hover:underline">Masuk di sini</a>
+            </p>
+        </div>
+    </div>
+
+    <!-- ============================================================
+         REGISTER SCRIPT — Sesuai LKPD Website Pribadi
+         Urutan: 1) REST API herisusanta.my.id → 2) Firebase → 3) localStorage
+    ============================================================ -->
+    <script type="module">
+        import { initializeApp }    from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+        import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+        import { getFirestore, doc, setDoc, getDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+
+        const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {
+            apiKey: "",
+            authDomain: "sigmaclub-db.firebaseapp.com",
+            projectId: "sigmaclub-db",
+            storageBucket: "sigmaclub-db.appspot.com",
+            appId: "1:384952934:web:934a34b238"
+        };
+        const app   = initializeApp(firebaseConfig);
+        const auth  = getAuth(app);
+        const db    = getFirestore(app);
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'sigmaclub-app';
+
+        // ─────────────────────────────────────────────────────────
+        // EVENT LISTENER FORM — sesuai pola register.js dari LKPD
+        // ─────────────────────────────────────────────────────────
+        document.getElementById('registerForm').addEventListener('submit', async function (e) {
+            e.preventDefault();
+            await prosesDaftar();
+        });
+
+        async function prosesDaftar() {
+            const username   = document.getElementById('username').value.trim();
+            const email      = document.getElementById('email').value.trim();
+            const password   = document.getElementById('password').value.trim();
+            const konfirmasi = document.getElementById('konfirmasi').value.trim();
+            const btn        = document.getElementById('tombolDaftar');
+
+            // Validasi dasar
+            if (!username || !email || !password || !konfirmasi) {
+                alert("Kesalahan: Semua kolom pendaftaran wajib diisi!");
+                return;
+            }
+            if (password !== konfirmasi) {
+                alert("Kesalahan: Konfirmasi kata sandi tidak cocok!");
+                document.getElementById('konfirmasi').value = '';
+                return;
+            }
+            if (password.length < 6) {
+                alert("Kesalahan: Kata sandi minimal 6 karakter!");
+                return;
+            }
+            // Nama pengguna terlarang
+            const namaTerlarang = ['admin', 'heri'];
+            if (namaTerlarang.includes(username.toLowerCase())) {
+                alert("Kesalahan: Nama pengguna '" + username + "' tidak dapat digunakan!");
+                return;
+            }
+            // Validasi format nama pengguna
+            if (!/^[a-zA-Z0-9_]{3,20}$/.test(username)) {
+                alert("Kesalahan: Nama pengguna hanya boleh berisi huruf, angka, atau garis bawah (_). Minimal 3, maksimal 20 karakter.");
+                return;
+            }
+
+            btn.disabled  = true;
+            btn.innerText = "MEMPROSES...";
+
+            // ── LANGKAH 1: REST API herisusanta.my.id (sesuai LKPD) ──
+            try {
+                const res  = await fetch('https://herisusanta.my.id/javalogin/api/register', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ username, email, password })
+                });
+                const data = await res.json();
+
+                if (data.token || data.username || data.status === 'ok') {
+                    // Sukses di REST API — simpan juga ke Firebase untuk data tambahan (poin, streak, dll)
+                    await simpanKeFirebase(username, email, password);
+                    alert("✅ Pendaftaran berhasil via Server!\nAkun '" + username + "' telah dibuat. Silakan masuk.");
+                    window.location.assign('masuk.html');
+                    return;
+                } else {
+                    // API menolak (kemungkinan username sudah dipakai di server)
+                    const pesan = data.message || data.error || '';
+                    if (pesan.toLowerCase().includes('exist') || pesan.toLowerCase().includes('sudah') || pesan.toLowerCase().includes('digunakan')) {
+                        alert("Nama pengguna '" + username + "' sudah terdaftar di server. Gunakan nama lain.");
+                        btn.disabled  = false;
+                        btn.innerText = "RESMIKAN IDENTITAS";
+                        return;
+                    }
+                    // Bukan error duplikat, coba Firebase
+                }
+            } catch (errApi) {
+                console.warn("REST API tidak tersedia, mencoba Firebase...", errApi.message);
+            }
+
+            // ── LANGKAH 2: Firebase Cloud Database ──
+            try {
+                await signInAnonymously(auth);
+                const userRef  = doc(db, 'artifacts', appId, 'public', 'data', 'userData', username);
+                const userSnap = await getDoc(userRef);
+
+                if (userSnap.exists()) {
+                    alert("Kesalahan: Nama pengguna '" + username + "' sudah digunakan di sistem awan.\nPilih nama lain.");
+                    btn.disabled  = false;
+                    btn.innerText = "RESMIKAN IDENTITAS";
+                    return;
+                }
+
+                await simpanKeFirebase(username, email, password);
+                alert("✅ Akun Elit '" + username + "' berhasil dibuat!\nSilakan lanjut masuk.");
+                window.location.assign('masuk.html');
+                return;
+
+            } catch (errFire) {
+                console.warn("Firebase gagal, menyimpan lokal...", errFire.message);
+                alert("Koneksi awan gagal. Menyimpan secara lokal...");
+            }
+
+            // ── LANGKAH 3: Penyimpanan Lokal (localStorage) ──
+            const dbLokal   = JSON.parse(localStorage.getItem('databaseSigma')  || '{}');
+            const dataLokal = JSON.parse(localStorage.getItem('userDataSigma') || '{}');
+
+            if (dbLokal[username]) {
+                alert("Nama pengguna '" + username + "' sudah digunakan secara lokal. Pilih nama lain.");
+            } else {
+                dbLokal[username]   = password;
+                dataLokal[username] = { email, sandi: password, streak: 0, poin: 0, absenTerakhir: '' };
+                localStorage.setItem('databaseSigma',  JSON.stringify(dbLokal));
+                localStorage.setItem('userDataSigma', JSON.stringify(dataLokal));
+                alert("✅ Akun '" + username + "' berhasil dibuat secara lokal!\nSilakan masuk.");
+                window.location.assign('masuk.html');
+            }
+
+            btn.disabled  = false;
+            btn.innerText = "RESMIKAN IDENTITAS";
+        }
+
+        // Helper: simpan data anggota ke Firebase
+        async function simpanKeFirebase(username, email, password) {
+            try {
+                await signInAnonymously(auth);
+                const userRef  = doc(db, 'artifacts', appId, 'public', 'data', 'userData', username);
+                const dataBaru = { email, sandi: password, streak: 0, poin: 0, absenTerakhir: '' };
+                await setDoc(userRef, dataBaru);
+
+                // Simpan juga ke localStorage sebagai cadangan
+                const dbLokal   = JSON.parse(localStorage.getItem('databaseSigma')  || '{}');
+                const dataLokal = JSON.parse(localStorage.getItem('userDataSigma') || '{}');
+                dbLokal[username]   = password;
+                dataLokal[username] = dataBaru;
+                localStorage.setItem('databaseSigma',  JSON.stringify(dbLokal));
+                localStorage.setItem('userDataSigma', JSON.stringify(dataLokal));
+            } catch (e) {
+                console.warn("Tidak bisa simpan ke Firebase:", e.message);
+            }
+        }
+    </script>
+
+    <!-- Script tambahan: indikator kekuatan kata sandi -->
+    <script>
+        function periksaKataSandi(nilai) {
+            const bar1  = document.getElementById('bar1');
+            const bar2  = document.getElementById('bar2');
+            const bar3  = document.getElementById('bar3');
+            const pesan = document.getElementById('pesan-sandi');
+
+            // Reset
+            [bar1, bar2, bar3].forEach(b => b.style.backgroundColor = '#3f3f46');
+
+            let skor = 0;
+            if (nilai.length >= 6)  skor++;
+            if (nilai.length >= 10) skor++;
+            if (/[0-9]/.test(nilai) && /[a-zA-Z]/.test(nilai)) skor++;
+
+            if (skor === 1) {
+                bar1.style.backgroundColor = '#ef4444';
+                pesan.innerText = 'Kata sandi lemah';
+                pesan.style.color = '#ef4444';
+            } else if (skor === 2) {
+                bar1.style.backgroundColor = '#f59e0b';
+                bar2.style.backgroundColor = '#f59e0b';
+                pesan.innerText = 'Kata sandi sedang';
+                pesan.style.color = '#f59e0b';
+            } else if (skor === 3) {
+                bar1.style.backgroundColor = '#22c55e';
+                bar2.style.backgroundColor = '#22c55e';
+                bar3.style.backgroundColor = '#22c55e';
+                pesan.innerText = 'Kata sandi kuat 💪';
+                pesan.style.color = '#22c55e';
+            } else {
+                pesan.innerText = '';
+            }
+        }
+    </script>
+</body>
+</html>

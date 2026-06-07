@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Masuk - Sigma Club</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body { font-family: 'Trebuchet MS', sans-serif; }
+        /* Style sesuai LKPD: tambahkan pada style.css di folder login */
+        .form-input {
+            width: 100%;
+            background: #18181b;
+            border: 1px solid #3f3f46;
+            padding: 1rem;
+            border-radius: 1rem;
+            color: #fff;
+            outline: none;
+            transition: border-color 0.3s;
+            font-size: 0.9rem;
+        }
+        .form-input:focus { border-color: #facc15; }
+        .form-label {
+            display: block;
+            font-size: 10px;
+            font-weight: 900;
+            color: #71717a;
+            margin-bottom: 6px;
+            text-transform: uppercase;
+            letter-spacing: 0.2em;
+        }
+        @keyframes slideUp {
+            from { opacity: 0; transform: translateY(24px); }
+            to   { opacity: 1; transform: translateY(0); }
+        }
+        .card-masuk { animation: slideUp 0.5s ease forwards; }
+    </style>
+</head>
+<body class="bg-black text-white min-h-screen flex flex-col">
+
+    <!-- Navigasi -->
+    <nav class="p-8">
+        <a href="index.html" class="text-yellow-400 font-black text-3xl italic tracking-tighter">SIGMACLUB</a>
+    </nav>
+
+    <div class="flex-grow flex items-center justify-center px-4 pb-10">
+        <div class="card-masuk bg-zinc-950 p-10 md:p-12 rounded-[2rem] border border-zinc-800 w-full max-w-md shadow-2xl">
+
+            <h2 class="text-4xl font-black mb-3 italic text-yellow-400 uppercase tracking-tighter">Akses Masuk</h2>
+            <p class="text-zinc-500 text-sm mb-10 italic">Selamat datang kembali, petarung kasta tertinggi.</p>
+
+            <!-- ============================================================
+                 FORM LOGIN — id="loginForm", input id="username" & "password"
+                 Sesuai syarat LKPD website pribadi
+            ============================================================ -->
+            <form id="loginForm" onsubmit="return false;">
+                <div class="space-y-5">
+                    <div>
+                        <label for="username" class="form-label">Identitas Pengguna</label>
+                        <input type="text" id="username" name="username"
+                               placeholder="Masukkan nama pengguna..."
+                               class="form-input" autocomplete="username" required>
+                    </div>
+                    <div>
+                        <label for="password" class="form-label">Kata Sandi Rahasia</label>
+                        <input type="password" id="password" name="password"
+                               placeholder="••••••••"
+                               class="form-input" autocomplete="current-password" required>
+                    </div>
+                    <button type="submit" id="tombolMasuk"
+                            class="w-full bg-yellow-400 text-black font-black py-4 rounded-2xl hover:bg-yellow-500 transition-all uppercase tracking-widest text-sm shadow-lg shadow-yellow-400/20">
+                        Verifikasi Sigma
+                    </button>
+                </div>
+            </form>
+
+            <p class="text-center mt-8 text-sm text-zinc-600">
+                Belum terdaftar? <a href="daftar.html" class="text-yellow-400 font-bold hover:underline">Daftar sekarang</a>
+            </p>
+            <p class="text-center mt-2 text-xs text-zinc-700 italic">
+                Demo: username <span class="text-zinc-500">heri</span> / sandi <span class="text-zinc-500">123</span>
+            </p>
+        </div>
+    </div>
+
+    <!-- ============================================================
+         LOGIN SCRIPT — Sesuai LKPD Website Pribadi
+         Urutan: 1) REST API herisusanta.my.id → 2) Firebase → 3) localStorage
+    ============================================================ -->
+    <script type="module">
+        import { initializeApp }    from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+        import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+        import { getFirestore, doc, getDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+
+        const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {
+            apiKey: "",
+            authDomain: "sigmaclub-db.firebaseapp.com",
+            projectId: "sigmaclub-db",
+            storageBucket: "sigmaclub-db.appspot.com",
+            appId: "1:384952934:web:934a34b238"
+        };
+        const app   = initializeApp(firebaseConfig);
+        const auth  = getAuth(app);
+        const db    = getFirestore(app);
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'sigmaclub-app';
+
+        // ─────────────────────────────────────────────────────────
+        // EVENT LISTENER FORM — sesuai pola login.js dari LKPD
+        // ─────────────────────────────────────────────────────────
+        document.getElementById('loginForm').addEventListener('submit', async function (e) {
+            e.preventDefault();
+            await prosesMasuk();
+        });
+
+        async function prosesMasuk() {
+            const u   = document.getElementById('username').value.trim();
+            const p   = document.getElementById('password').value.trim();
+            const btn = document.getElementById('tombolMasuk');
+
+            if (!u || !p) {
+                alert("Kesalahan: Isi kolom identitas dan kata sandi terlebih dahulu!");
+                return;
+            }
+
+            btn.disabled  = true;
+            btn.innerText = "MEMVERIFIKASI...";
+
+            // ── LANGKAH 1: REST API herisusanta.my.id (sesuai LKPD) ──
+            try {
+                const res  = await fetch('https://herisusanta.my.id/javalogin/api/', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ username: u, password: p })
+                });
+                const data = await res.json();
+
+                // Cek token atau status sukses dari API
+                if (data.token || data.status === 'ok' || data.login === 'success') {
+                    alert("Verifikasi berhasil via Server! Selamat datang " + u + ".");
+                    localStorage.setItem('userAktif', u);
+                    if (data.token) localStorage.setItem('token', data.token);
+
+                    // Arahkan admin ke panel admin, pengguna biasa ke beranda
+                    if (u.toLowerCase() === 'admin') {
+                        window.location.assign('admin.html');
+                    } else {
+                        window.location.assign('index.html');
+                    }
+                    return;
+                }
+                // Jika API menolak, lanjut ke Firebase
+            } catch (errApi) {
+                console.warn("REST API tidak tersedia, mencoba Firebase...", errApi.message);
+            }
+
+            // ── LANGKAH 2: Akses khusus Admin & Heri (fallback lokal) ──
+            if (u === "admin" && p === "123") {
+                alert("Masuk sebagai Admin berhasil!");
+                localStorage.setItem('userAktif', 'admin');
+                window.location.assign('admin.html');
+                return;
+            }
+            if (u === "heri" && p === "123") {
+                alert("Verifikasi berhasil! Selamat datang sang legenda, Heri.");
+                localStorage.setItem('userAktif', 'heri');
+                window.location.assign('index.html');
+                return;
+            }
+
+            // ── LANGKAH 3: Firebase Cloud Database ──
+            try {
+                await signInAnonymously(auth);
+                const userRef  = doc(db, 'artifacts', appId, 'public', 'data', 'userData', u);
+                const userSnap = await getDoc(userRef);
+
+                if (userSnap.exists()) {
+                    const data = userSnap.data();
+                    if (data.sandi === p) {
+                        alert("Akses diberikan via Cloud! Halo " + u + ".");
+                        localStorage.setItem('userAktif', u);
+                        window.location.assign('index.html');
+                        return;
+                    }
+                }
+            } catch (errFire) {
+                console.warn("Firebase tidak tersedia, mencoba lokal...", errFire.message);
+            }
+
+            // ── LANGKAH 4: Penyimpanan Lokal (localStorage) ──
+            const dbLokal = JSON.parse(localStorage.getItem('databaseSigma') || '{}');
+            if (dbLokal[u] && dbLokal[u] === p) {
+                alert("Akses diberikan (Lokal)! Halo " + u + ".");
+                localStorage.setItem('userAktif', u);
+                window.location.assign('index.html');
+            } else {
+                alert("Akses Ditolak!\nIdentitas atau Kata Sandi tidak cocok di semua sistem.\nPeriksa kembali data kamu.");
+            }
+
+            btn.disabled  = false;
+            btn.innerText = "VERIFIKASI SIGMA";
+        }
+    </script>
+</body>
+</html>

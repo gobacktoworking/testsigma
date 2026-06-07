@@ -1,0 +1,680 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Panel Admin - Sigma Club</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        body { font-family: 'Trebuchet MS', sans-serif; background: #000; color: #fff; }
+
+        .kartu-stat { transition: transform 0.3s, box-shadow 0.3s; }
+        .kartu-stat:hover { transform: translateY(-4px); }
+
+        /* Tabel baris bergantian */
+        #tabel-pengguna tr:nth-child(even) td { background: rgba(255,255,255,0.02); }
+        #tabel-pengguna tr:hover td { background: rgba(250,204,21,0.04); }
+
+        /* Badge kasta */
+        .badge-sigma   { color: #facc15; background: #1c1600; border: 1px solid #facc15; }
+        .badge-calon   { color: #d4d4d8; background: #18181b; border: 1px solid #3f3f46; }
+        .badge-beta    { color: #71717a; background: #09090b; border: 1px solid #27272a; }
+        .badge-legenda { color: #fde68a; background: #292200; border: 1px solid #d97706; }
+
+        .badge { font-size: 9px; font-weight: 900; padding: 2px 8px; border-radius: 99px; text-transform: uppercase; letter-spacing: 0.1em; white-space: nowrap; }
+
+        /* Loading spinner */
+        @keyframes spin { to { transform: rotate(360deg); } }
+        .putar { animation: spin 1s linear infinite; }
+
+        /* Tab aktif */
+        .tab-aktif   { background: #facc15; color: #000; font-weight: 900; }
+        .tab-nonaktif { background: #18181b; color: #71717a; }
+        .tab-nonaktif:hover { color: #fff; }
+
+        /* Tooltip */
+        [title]:hover::after {
+            content: attr(title);
+            position: absolute;
+            background: #1c1917;
+            border: 1px solid #292524;
+            padding: 4px 8px;
+            border-radius: 6px;
+            font-size: 10px;
+            white-space: nowrap;
+            z-index: 999;
+            top: -30px;
+            left: 50%;
+            transform: translateX(-50%);
+        }
+        [title] { position: relative; }
+    </style>
+</head>
+<body class="min-h-screen">
+
+    <!-- ==================== NAVIGASI ADMIN ==================== -->
+    <nav class="bg-zinc-950 border-b border-zinc-800 px-6 py-4 sticky top-0 z-50">
+        <div class="container mx-auto flex justify-between items-center">
+            <div>
+                <h1 class="text-2xl font-black italic text-yellow-400 leading-tight">SIGMACLUB</h1>
+                <p class="text-[9px] text-zinc-500 font-black uppercase tracking-[0.25em]">Panel Kontrol Admin</p>
+            </div>
+
+            <div class="flex items-center gap-4">
+                <a href="index.html" class="text-xs text-zinc-400 hover:text-white font-bold uppercase transition hidden md:inline">
+                    <i class="fas fa-home mr-1"></i>Beranda
+                </a>
+                <a href="misiharian.html" class="text-xs text-zinc-400 hover:text-white font-bold uppercase transition hidden md:inline">
+                    <i class="fas fa-tasks mr-1"></i>Misi
+                </a>
+                <span class="bg-yellow-400 text-black text-[10px] font-black px-3 py-1 rounded-full uppercase">
+                    <i class="fas fa-user-shield mr-1"></i>ADMIN
+                </span>
+                <button onclick="adminKeluar()"
+                        class="bg-red-900 hover:bg-red-700 text-red-300 text-[10px] font-black px-4 py-2 rounded-lg uppercase tracking-wide transition">
+                    <i class="fas fa-sign-out-alt mr-1"></i>Keluar
+                </button>
+            </div>
+        </div>
+    </nav>
+
+    <!-- ==================== KONTEN UTAMA ==================== -->
+    <main class="container mx-auto px-4 py-8 max-w-7xl">
+
+        <!-- Salam Admin -->
+        <div class="mb-8">
+            <h2 class="text-3xl font-black italic uppercase">Selamat Datang, <span class="text-yellow-400">Admin</span>!</h2>
+            <p class="text-zinc-500 text-sm mt-1">Kelola semua anggota Sigma Club dari panel ini.</p>
+        </div>
+
+        <!-- ── KARTU STATISTIK ── -->
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+            <div class="kartu-stat bg-yellow-400 text-black p-6 rounded-2xl text-center">
+                <i class="fas fa-users text-2xl mb-2 opacity-60"></i>
+                <p class="text-[10px] font-black uppercase mb-1">Total Anggota</p>
+                <h3 id="stat-total" class="text-4xl font-black">
+                    <i class="fas fa-circle-notch putar text-2xl opacity-50"></i>
+                </h3>
+            </div>
+            <div class="kartu-stat bg-zinc-900 border border-zinc-800 p-6 rounded-2xl text-center">
+                <i class="fas fa-star text-yellow-400 text-2xl mb-2"></i>
+                <p class="text-[10px] font-black uppercase mb-1 text-zinc-400">Total Poin</p>
+                <h3 id="stat-poin" class="text-4xl font-black text-yellow-400">
+                    <i class="fas fa-circle-notch putar text-2xl opacity-50"></i>
+                </h3>
+            </div>
+            <div class="kartu-stat bg-zinc-900 border border-zinc-800 p-6 rounded-2xl text-center">
+                <i class="fas fa-fire text-orange-400 text-2xl mb-2"></i>
+                <p class="text-[10px] font-black uppercase mb-1 text-zinc-400">Streak Terpanjang</p>
+                <h3 id="stat-streak" class="text-4xl font-black text-orange-400">
+                    <i class="fas fa-circle-notch putar text-2xl opacity-50"></i>
+                </h3>
+            </div>
+            <div class="kartu-stat bg-zinc-900 border border-zinc-800 p-6 rounded-2xl text-center">
+                <i class="fas fa-bolt text-green-400 text-2xl mb-2"></i>
+                <p class="text-[10px] font-black uppercase mb-1 text-zinc-400">Aktif Hari Ini</p>
+                <h3 id="stat-aktif" class="text-4xl font-black text-green-400">
+                    <i class="fas fa-circle-notch putar text-2xl opacity-50"></i>
+                </h3>
+            </div>
+        </div>
+
+        <!-- ── TAB PANEL ── -->
+        <div class="flex gap-2 mb-6">
+            <button onclick="gantiTab('anggota')" id="tab-anggota"
+                    class="tab-aktif text-xs px-5 py-2.5 rounded-lg transition uppercase font-bold tracking-wider">
+                <i class="fas fa-users mr-2"></i>Manajemen Anggota
+            </button>
+            <button onclick="gantiTab('tambah')" id="tab-tambah"
+                    class="tab-nonaktif text-xs px-5 py-2.5 rounded-lg transition uppercase font-bold tracking-wider">
+                <i class="fas fa-user-plus mr-2"></i>Tambah Anggota
+            </button>
+            <button onclick="gantiTab('log')" id="tab-log"
+                    class="tab-nonaktif text-xs px-5 py-2.5 rounded-lg transition uppercase font-bold tracking-wider">
+                <i class="fas fa-scroll mr-2"></i>Log Aktivitas
+            </button>
+        </div>
+
+        <!-- ── TAB: MANAJEMEN ANGGOTA ── -->
+        <div id="panel-anggota">
+            <div class="bg-zinc-950 border border-zinc-800 rounded-3xl p-6">
+                <!-- Toolbar -->
+                <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
+                    <div>
+                        <h3 class="text-xl font-black italic uppercase text-yellow-400">Daftar Seluruh Anggota</h3>
+                        <p id="info-sumber" class="text-[10px] text-zinc-600 mt-0.5"></p>
+                    </div>
+                    <div class="flex gap-3 items-center">
+                        <input id="cari-pengguna" type="text" placeholder="Cari anggota..."
+                               oninput="cariPengguna(this.value)"
+                               class="bg-zinc-900 border border-zinc-700 text-white text-xs px-4 py-2 rounded-lg outline-none focus:border-yellow-400 transition w-44">
+                        <button onclick="muatDataPengguna()"
+                                class="bg-yellow-400 hover:bg-yellow-500 text-black text-xs font-black px-4 py-2 rounded-lg uppercase transition">
+                            <i class="fas fa-sync-alt mr-1"></i>Muat Ulang
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Tabel -->
+                <div class="overflow-x-auto">
+                    <table class="w-full text-sm min-w-[700px]">
+                        <thead>
+                            <tr class="border-b border-zinc-800">
+                                <th class="text-left py-3 pr-4 text-[10px] uppercase tracking-widest text-zinc-500 font-black">No</th>
+                                <th class="text-left py-3 pr-4 text-[10px] uppercase tracking-widest text-zinc-500 font-black">Nama Pengguna</th>
+                                <th class="text-left py-3 pr-4 text-[10px] uppercase tracking-widest text-zinc-500 font-black">Email</th>
+                                <th class="text-center py-3 pr-4 text-[10px] uppercase tracking-widest text-zinc-500 font-black">Poin</th>
+                                <th class="text-center py-3 pr-4 text-[10px] uppercase tracking-widest text-zinc-500 font-black">Streak</th>
+                                <th class="text-center py-3 pr-4 text-[10px] uppercase tracking-widest text-zinc-500 font-black">Kasta</th>
+                                <th class="text-center py-3 pr-4 text-[10px] uppercase tracking-widest text-zinc-500 font-black">Absen Terakhir</th>
+                                <th class="text-center py-3 text-[10px] uppercase tracking-widest text-zinc-500 font-black">Aksi</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tabel-pengguna">
+                            <tr>
+                                <td colspan="8" class="text-center py-16 text-zinc-600">
+                                    <i class="fas fa-circle-notch putar text-3xl text-yellow-400/30 block mb-3"></i>
+                                    Memuat data anggota...
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Pagination info -->
+                <div id="info-tabel" class="mt-4 text-[10px] text-zinc-600 text-right font-bold uppercase"></div>
+            </div>
+        </div>
+
+        <!-- ── TAB: TAMBAH ANGGOTA MANUAL ── -->
+        <div id="panel-tambah" class="hidden">
+            <div class="bg-zinc-950 border border-zinc-800 rounded-3xl p-8 max-w-xl">
+                <h3 class="text-xl font-black italic uppercase text-yellow-400 mb-6">
+                    <i class="fas fa-user-plus mr-2"></i>Tambah Anggota Manual
+                </h3>
+                <div class="space-y-4">
+                    <div>
+                        <label class="block text-[10px] font-black text-zinc-500 mb-1.5 uppercase tracking-widest">Nama Pengguna</label>
+                        <input type="text" id="admin-username" placeholder="Nama pengguna baru..."
+                               class="w-full bg-zinc-900 border border-zinc-700 p-3 rounded-xl text-white text-sm outline-none focus:border-yellow-400 transition">
+                    </div>
+                    <div>
+                        <label class="block text-[10px] font-black text-zinc-500 mb-1.5 uppercase tracking-widest">Email</label>
+                        <input type="email" id="admin-email" placeholder="email@domain.com"
+                               class="w-full bg-zinc-900 border border-zinc-700 p-3 rounded-xl text-white text-sm outline-none focus:border-yellow-400 transition">
+                    </div>
+                    <div>
+                        <label class="block text-[10px] font-black text-zinc-500 mb-1.5 uppercase tracking-widest">Kata Sandi Awal</label>
+                        <input type="password" id="admin-sandi" placeholder="Kata sandi..."
+                               class="w-full bg-zinc-900 border border-zinc-700 p-3 rounded-xl text-white text-sm outline-none focus:border-yellow-400 transition">
+                    </div>
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-[10px] font-black text-zinc-500 mb-1.5 uppercase tracking-widest">Poin Awal</label>
+                            <input type="number" id="admin-poin" value="0" min="0"
+                                   class="w-full bg-zinc-900 border border-zinc-700 p-3 rounded-xl text-white text-sm outline-none focus:border-yellow-400 transition">
+                        </div>
+                        <div>
+                            <label class="block text-[10px] font-black text-zinc-500 mb-1.5 uppercase tracking-widest">Streak Awal</label>
+                            <input type="number" id="admin-streak" value="0" min="0"
+                                   class="w-full bg-zinc-900 border border-zinc-700 p-3 rounded-xl text-white text-sm outline-none focus:border-yellow-400 transition">
+                        </div>
+                    </div>
+                    <button onclick="tambahPenggunaAdmin()"
+                            class="w-full bg-yellow-400 hover:bg-yellow-500 text-black font-black py-3.5 rounded-xl text-sm uppercase tracking-wider transition shadow-lg shadow-yellow-400/20">
+                        <i class="fas fa-plus mr-2"></i>Daftarkan Anggota Baru
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- ── TAB: LOG AKTIVITAS ── -->
+        <div id="panel-log" class="hidden">
+            <div class="bg-zinc-950 border border-zinc-800 rounded-3xl p-6">
+                <div class="flex justify-between items-center mb-6">
+                    <h3 class="text-xl font-black italic uppercase text-yellow-400">
+                        <i class="fas fa-scroll mr-2"></i>Log Aktivitas Admin
+                    </h3>
+                    <button onclick="hapusLog()"
+                            class="text-xs bg-zinc-800 hover:bg-red-900 text-zinc-400 hover:text-red-300 px-4 py-2 rounded-lg uppercase font-bold transition">
+                        <i class="fas fa-trash mr-1"></i>Hapus Log
+                    </button>
+                </div>
+                <div id="daftar-log" class="space-y-2 max-h-[500px] overflow-y-auto">
+                    <p class="text-zinc-600 text-sm italic text-center py-8">Belum ada aktivitas tercatat.</p>
+                </div>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- ── MODAL EDIT PENGGUNA ── -->
+    <div id="modal-edit" class="hidden fixed inset-0 z-[200] flex items-center justify-center bg-black/80 backdrop-blur-sm">
+        <div class="bg-zinc-950 border border-zinc-700 p-8 rounded-3xl w-full max-w-md shadow-2xl">
+            <h4 class="text-xl font-black italic uppercase text-yellow-400 mb-5">
+                <i class="fas fa-pen mr-2"></i>Edit Data Anggota: <span id="edit-nama-judul"></span>
+            </h4>
+            <div class="space-y-4">
+                <input type="hidden" id="edit-nama">
+                <div>
+                    <label class="block text-[10px] font-black text-zinc-500 mb-1.5 uppercase tracking-widest">Email</label>
+                    <input type="email" id="edit-email"
+                           class="w-full bg-zinc-900 border border-zinc-700 p-3 rounded-xl text-white text-sm outline-none focus:border-yellow-400 transition">
+                </div>
+                <div>
+                    <label class="block text-[10px] font-black text-zinc-500 mb-1.5 uppercase tracking-widest">Poin</label>
+                    <input type="number" id="edit-poin" min="0"
+                           class="w-full bg-zinc-900 border border-zinc-700 p-3 rounded-xl text-white text-sm outline-none focus:border-yellow-400 transition">
+                </div>
+                <div>
+                    <label class="block text-[10px] font-black text-zinc-500 mb-1.5 uppercase tracking-widest">Streak (Hari)</label>
+                    <input type="number" id="edit-streak" min="0"
+                           class="w-full bg-zinc-900 border border-zinc-700 p-3 rounded-xl text-white text-sm outline-none focus:border-yellow-400 transition">
+                </div>
+                <div class="flex gap-3 pt-2">
+                    <button onclick="simpanEdit()"
+                            class="flex-1 bg-yellow-400 hover:bg-yellow-500 text-black font-black py-3 rounded-xl text-sm uppercase transition">
+                        <i class="fas fa-save mr-2"></i>Simpan
+                    </button>
+                    <button onclick="tutupModal()"
+                            class="flex-1 bg-zinc-800 hover:bg-zinc-700 text-white font-black py-3 rounded-xl text-sm uppercase transition">
+                        Batal
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <footer class="py-6 border-t border-zinc-900 text-center text-zinc-700 text-[10px] uppercase tracking-widest mt-8">
+        &copy; 2026 Sigma Club &mdash; Panel Admin &mdash; SMAN 8 Yogyakarta
+    </footer>
+
+    <!-- ==================== ADMIN SCRIPT ==================== -->
+    <script type="module">
+        import { initializeApp }  from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+        import { getAuth, signInAnonymously }  from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+        import { getFirestore, doc, setDoc, getDoc, getDocs, deleteDoc, collection, updateDoc }
+            from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+
+        const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {
+            apiKey: "",
+            authDomain: "sigmaclub-db.firebaseapp.com",
+            projectId: "sigmaclub-db",
+            storageBucket: "sigmaclub-db.appspot.com",
+            messagingSenderId: "384952934",
+            appId: "1:384952934:web:934a34b238"
+        };
+        const app   = initializeApp(firebaseConfig);
+        const auth  = getAuth(app);
+        const db    = getFirestore(app);
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'sigmaclub-app';
+
+        // Simpan semua data pengguna di memori untuk pencarian
+        window._semuaPengguna = [];
+
+        // ─────────────────────────────────────────────────────
+        // MUAT DATA PENGGUNA
+        // ─────────────────────────────────────────────────────
+        window.muatDataPengguna = async function () {
+            const tbody = document.getElementById('tabel-pengguna');
+            tbody.innerHTML = `<tr><td colspan="8" class="text-center py-12 text-zinc-600">
+                <i class="fas fa-circle-notch putar text-3xl text-yellow-400/30 block mb-3"></i>Memuat data...</td></tr>`;
+
+            let pengguna = [];
+            let sumber   = 'Lokal';
+
+            try {
+                await signInAnonymously(auth);
+                const colRef   = collection(db, 'artifacts', appId, 'public', 'data', 'userData');
+                const snapshot = await getDocs(colRef);
+
+                snapshot.forEach(d => pengguna.push({ id: d.id, ...d.data(), sumber: 'Awan' }));
+                sumber = 'Firebase Cloud';
+            } catch (e) {
+                console.warn("Firebase gagal:", e.message);
+            }
+
+            // Gabungkan dengan data lokal (yang tidak ada di Firebase)
+            const dataLokal = JSON.parse(localStorage.getItem('userDataSigma') || '{}');
+            for (const [id, data] of Object.entries(dataLokal)) {
+                if (!pengguna.find(u => u.id === id)) {
+                    pengguna.push({ id, ...data, sumber: 'Lokal' });
+                }
+            }
+
+            window._semuaPengguna = pengguna;
+            tampilkanTabel(pengguna);
+            perbaruiStat(pengguna);
+            document.getElementById('info-sumber').innerText =
+                `Memuat dari ${sumber} — ${pengguna.length} anggota ditemukan`;
+            catatLog(`Memuat ${pengguna.length} anggota dari ${sumber}`);
+        };
+
+        // ─────────────────────────────────────────────────────
+        // TAMPILKAN TABEL
+        // ─────────────────────────────────────────────────────
+        window.tampilkanTabel = function (pengguna) {
+            const tbody  = document.getElementById('tabel-pengguna');
+            const hariIni = new Date().toLocaleDateString();
+
+            if (pengguna.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="8" class="text-center py-12 text-zinc-600 italic">
+                    <i class="fas fa-user-slash text-4xl block mb-3 opacity-30"></i>Belum ada anggota terdaftar</td></tr>`;
+                document.getElementById('info-tabel').innerText = '';
+                return;
+            }
+
+            tbody.innerHTML = pengguna.map((u, i) => {
+                const kasta    = tentukanKasta(u.streak || 0);
+                const aktifHariIni = u.absenTerakhir === hariIni;
+                const inisial  = (u.id || '?')[0].toUpperCase();
+
+                return `
+                <tr class="border-b border-zinc-900/70 transition-colors">
+                    <td class="py-3.5 pr-4 text-zinc-600 text-xs font-bold">${i + 1}</td>
+                    <td class="py-3.5 pr-4">
+                        <div class="flex items-center gap-3">
+                            <div class="w-8 h-8 bg-yellow-400 rounded-full flex items-center justify-center text-black font-black text-xs flex-shrink-0">${inisial}</div>
+                            <div>
+                                <p class="font-bold text-sm">${u.id}</p>
+                                <span class="text-[9px] px-1.5 py-0.5 rounded font-bold uppercase ${u.sumber === 'Awan' ? 'bg-blue-900/50 text-blue-400' : 'bg-zinc-800 text-zinc-500'}">${u.sumber}</span>
+                            </div>
+                        </div>
+                    </td>
+                    <td class="py-3.5 pr-4 text-zinc-400 text-xs">${u.email || '<span class="text-zinc-700 italic">—</span>'}</td>
+                    <td class="py-3.5 pr-4 text-center font-black text-yellow-400">${u.poin || 0}</td>
+                    <td class="py-3.5 pr-4 text-center">
+                        <span class="font-black text-lg ${(u.streak || 0) > 0 ? 'text-orange-400' : 'text-zinc-600'}">${u.streak || 0}</span>
+                        ${(u.streak || 0) > 0 ? '<i class="fas fa-fire text-orange-400 text-xs ml-1"></i>' : ''}
+                    </td>
+                    <td class="py-3.5 pr-4 text-center">
+                        <span class="badge ${kasta.kelas}">${kasta.label}</span>
+                    </td>
+                    <td class="py-3.5 pr-4 text-center text-xs ${aktifHariIni ? 'text-green-400 font-bold' : 'text-zinc-600'}">
+                        ${aktifHariIni ? '<i class="fas fa-check-circle mr-1"></i>' : ''}
+                        ${u.absenTerakhir || '<span class="italic">Belum pernah</span>'}
+                    </td>
+                    <td class="py-3.5 text-center">
+                        <div class="flex gap-1.5 justify-center">
+                            <button onclick="bukaModalEdit('${u.id}')"
+                                    title="Edit anggota"
+                                    class="text-[10px] bg-blue-900/50 text-blue-300 hover:bg-blue-700 px-2.5 py-1.5 rounded-lg transition font-bold">
+                                <i class="fas fa-pen"></i>
+                            </button>
+                            <button onclick="resetPoin('${u.id}')"
+                                    title="Reset poin & streak"
+                                    class="text-[10px] bg-amber-900/50 text-amber-300 hover:bg-amber-700 px-2.5 py-1.5 rounded-lg transition font-bold">
+                                <i class="fas fa-redo"></i>
+                            </button>
+                            <button onclick="hapusPengguna('${u.id}')"
+                                    title="Hapus akun permanen"
+                                    class="text-[10px] bg-red-900/50 text-red-300 hover:bg-red-700 px-2.5 py-1.5 rounded-lg transition font-bold">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </div>
+                    </td>
+                </tr>`;
+            }).join('');
+
+            document.getElementById('info-tabel').innerText = `Menampilkan ${pengguna.length} anggota`;
+        };
+
+        // ─────────────────────────────────────────────────────
+        // UPDATE STATISTIK
+        // ─────────────────────────────────────────────────────
+        function perbaruiStat(pengguna) {
+            document.getElementById('stat-total').innerText  = pengguna.length;
+            document.getElementById('stat-poin').innerText   = pengguna.reduce((s, u) => s + (u.poin || 0), 0);
+            document.getElementById('stat-streak').innerText = pengguna.reduce((m, u) => Math.max(m, u.streak || 0), 0);
+
+            const hariIni = new Date().toLocaleDateString();
+            document.getElementById('stat-aktif').innerText  = pengguna.filter(u => u.absenTerakhir === hariIni).length;
+        }
+
+        // ─────────────────────────────────────────────────────
+        // TENTUKAN KASTA
+        // ─────────────────────────────────────────────────────
+        function tentukanKasta(streak) {
+            if (streak >= 60) return { label: '⭐ Sigma Legenda', kelas: 'badge badge-legenda' };
+            if (streak >= 30) return { label: 'Sigma Sejati',    kelas: 'badge badge-sigma'   };
+            if (streak >= 15) return { label: 'Calon Sigma',     kelas: 'badge badge-calon'   };
+            return               { label: 'Beta',               kelas: 'badge badge-beta'    };
+        }
+
+        // ─────────────────────────────────────────────────────
+        // CARI PENGGUNA
+        // ─────────────────────────────────────────────────────
+        window.cariPengguna = function (kata) {
+            const hasil = window._semuaPengguna.filter(u =>
+                u.id.toLowerCase().includes(kata.toLowerCase()) ||
+                (u.email || '').toLowerCase().includes(kata.toLowerCase())
+            );
+            tampilkanTabel(hasil);
+        };
+
+        // ─────────────────────────────────────────────────────
+        // RESET POIN & STREAK
+        // ─────────────────────────────────────────────────────
+        window.resetPoin = async function (username) {
+            if (!confirm(`Reset poin dan streak untuk anggota "${username}"?\nData latihan akan dikembalikan ke 0.`)) return;
+
+            try {
+                await signInAnonymously(auth);
+                const ref  = doc(db, 'artifacts', appId, 'public', 'data', 'userData', username);
+                const snap = await getDoc(ref);
+                if (snap.exists()) {
+                    await updateDoc(ref, { poin: 0, streak: 0, absenTerakhir: '' });
+                }
+            } catch (e) { console.warn(e); }
+
+            // Lokal
+            const lokal = JSON.parse(localStorage.getItem('userDataSigma') || '{}');
+            if (lokal[username]) {
+                lokal[username].poin = 0;
+                lokal[username].streak = 0;
+                lokal[username].absenTerakhir = '';
+                localStorage.setItem('userDataSigma', JSON.stringify(lokal));
+            }
+
+            catatLog(`RESET poin & streak: ${username}`);
+            alert(`✅ Data poin & streak "${username}" berhasil direset ke 0.`);
+            muatDataPengguna();
+        };
+
+        // ─────────────────────────────────────────────────────
+        // HAPUS PENGGUNA
+        // ─────────────────────────────────────────────────────
+        window.hapusPengguna = async function (username) {
+            if (!confirm(`⚠️ HAPUS PERMANEN akun "${username}"?\n\nTindakan ini TIDAK DAPAT dibatalkan!`)) return;
+
+            try {
+                await signInAnonymously(auth);
+                const ref = doc(db, 'artifacts', appId, 'public', 'data', 'userData', username);
+                await deleteDoc(ref);
+            } catch (e) { console.warn(e); }
+
+            const dbLokal   = JSON.parse(localStorage.getItem('databaseSigma')  || '{}');
+            const dataLokal = JSON.parse(localStorage.getItem('userDataSigma') || '{}');
+            delete dbLokal[username];
+            delete dataLokal[username];
+            localStorage.setItem('databaseSigma',  JSON.stringify(dbLokal));
+            localStorage.setItem('userDataSigma', JSON.stringify(dataLokal));
+
+            catatLog(`HAPUS akun: ${username}`);
+            alert(`✅ Akun "${username}" berhasil dihapus secara permanen.`);
+            muatDataPengguna();
+        };
+
+        // ─────────────────────────────────────────────────────
+        // TAMBAH ANGGOTA MANUAL (dari admin)
+        // ─────────────────────────────────────────────────────
+        window.tambahPenggunaAdmin = async function () {
+            const username = document.getElementById('admin-username').value.trim();
+            const email    = document.getElementById('admin-email').value.trim();
+            const sandi    = document.getElementById('admin-sandi').value.trim();
+            const poin     = parseInt(document.getElementById('admin-poin').value) || 0;
+            const streak   = parseInt(document.getElementById('admin-streak').value) || 0;
+
+            if (!username || !email || !sandi) {
+                alert("Semua kolom wajib diisi!");
+                return;
+            }
+
+            const dataBaru = { email, sandi, poin, streak, absenTerakhir: '' };
+
+            try {
+                await signInAnonymously(auth);
+                const ref = doc(db, 'artifacts', appId, 'public', 'data', 'userData', username);
+                await setDoc(ref, dataBaru);
+            } catch (e) { console.warn(e); }
+
+            const dbLokal   = JSON.parse(localStorage.getItem('databaseSigma')  || '{}');
+            const dataLokal = JSON.parse(localStorage.getItem('userDataSigma') || '{}');
+            dbLokal[username]   = sandi;
+            dataLokal[username] = dataBaru;
+            localStorage.setItem('databaseSigma',  JSON.stringify(dbLokal));
+            localStorage.setItem('userDataSigma', JSON.stringify(dataLokal));
+
+            catatLog(`TAMBAH anggota baru: ${username} (poin=${poin}, streak=${streak})`);
+            alert(`✅ Anggota "${username}" berhasil ditambahkan!`);
+
+            ['admin-username','admin-email','admin-sandi'].forEach(id => {
+                document.getElementById(id).value = '';
+            });
+            document.getElementById('admin-poin').value   = '0';
+            document.getElementById('admin-streak').value = '0';
+
+            gantiTab('anggota');
+            muatDataPengguna();
+        };
+
+        // ─────────────────────────────────────────────────────
+        // MODAL EDIT
+        // ─────────────────────────────────────────────────────
+        window.bukaModalEdit = function (username) {
+            const u = window._semuaPengguna.find(x => x.id === username);
+            if (!u) return;
+
+            document.getElementById('edit-nama').value       = u.id;
+            document.getElementById('edit-nama-judul').innerText = u.id;
+            document.getElementById('edit-email').value      = u.email  || '';
+            document.getElementById('edit-poin').value       = u.poin   || 0;
+            document.getElementById('edit-streak').value     = u.streak || 0;
+
+            document.getElementById('modal-edit').classList.remove('hidden');
+        };
+
+        window.tutupModal = function () {
+            document.getElementById('modal-edit').classList.add('hidden');
+        };
+
+        window.simpanEdit = async function () {
+            const username = document.getElementById('edit-nama').value;
+            const email    = document.getElementById('edit-email').value.trim();
+            const poin     = parseInt(document.getElementById('edit-poin').value)   || 0;
+            const streak   = parseInt(document.getElementById('edit-streak').value) || 0;
+
+            try {
+                await signInAnonymously(auth);
+                const ref  = doc(db, 'artifacts', appId, 'public', 'data', 'userData', username);
+                const snap = await getDoc(ref);
+                if (snap.exists()) {
+                    await updateDoc(ref, { email, poin, streak });
+                } else {
+                    await setDoc(ref, { email, poin, streak, sandi: '123', absenTerakhir: '' });
+                }
+            } catch (e) { console.warn(e); }
+
+            const lokal = JSON.parse(localStorage.getItem('userDataSigma') || '{}');
+            if (lokal[username]) {
+                lokal[username].email  = email;
+                lokal[username].poin   = poin;
+                lokal[username].streak = streak;
+                localStorage.setItem('userDataSigma', JSON.stringify(lokal));
+            }
+
+            catatLog(`EDIT ${username}: email=${email}, poin=${poin}, streak=${streak}`);
+            tutupModal();
+            alert(`✅ Data anggota "${username}" berhasil diperbarui!`);
+            muatDataPengguna();
+        };
+
+        // Tutup modal saat klik latar belakang
+        document.getElementById('modal-edit').addEventListener('click', function (e) {
+            if (e.target === this) tutupModal();
+        });
+
+        // ─────────────────────────────────────────────────────
+        // LOG AKTIVITAS
+        // ─────────────────────────────────────────────────────
+        function catatLog(pesan) {
+            const log  = JSON.parse(localStorage.getItem('adminLog') || '[]');
+            const waktu = new Date().toLocaleString('id-ID');
+            log.unshift({ waktu, pesan });
+            if (log.length > 100) log.pop();
+            localStorage.setItem('adminLog', JSON.stringify(log));
+            renderLog();
+        }
+
+        function renderLog() {
+            const log     = JSON.parse(localStorage.getItem('adminLog') || '[]');
+            const wadah   = document.getElementById('daftar-log');
+            if (log.length === 0) {
+                wadah.innerHTML = '<p class="text-zinc-600 text-sm italic text-center py-8">Belum ada aktivitas tercatat.</p>';
+                return;
+            }
+            wadah.innerHTML = log.map(l => `
+                <div class="flex gap-3 text-xs py-2.5 px-4 bg-zinc-900/50 rounded-lg">
+                    <span class="text-zinc-600 shrink-0 w-36">${l.waktu}</span>
+                    <span class="text-zinc-300 font-mono">${l.pesan}</span>
+                </div>`).join('');
+        }
+
+        window.hapusLog = function () {
+            if (confirm("Hapus semua log aktivitas?")) {
+                localStorage.removeItem('adminLog');
+                renderLog();
+            }
+        };
+
+        // ─────────────────────────────────────────────────────
+        // INISIALISASI
+        // ─────────────────────────────────────────────────────
+        document.addEventListener('DOMContentLoaded', function () {
+            muatDataPengguna();
+            renderLog();
+        });
+    </script>
+
+    <!-- Script UI (ganti tab, keluar) -->
+    <script>
+        // Cek akses admin
+        (function () {
+            const aktif = localStorage.getItem('userAktif');
+            if (aktif !== 'admin') {
+                alert('❌ Akses Ditolak!\nHanya Admin yang boleh masuk ke panel ini.');
+                window.location.assign('masuk.html');
+            }
+        })();
+
+        function gantiTab(nama) {
+            ['anggota', 'tambah', 'log'].forEach(function (t) {
+                document.getElementById('panel-' + t).classList.add('hidden');
+                document.getElementById('tab-' + t).classList.remove('tab-aktif');
+                document.getElementById('tab-' + t).classList.add('tab-nonaktif');
+            });
+            document.getElementById('panel-' + nama).classList.remove('hidden');
+            document.getElementById('tab-'   + nama).classList.add('tab-aktif');
+            document.getElementById('tab-'   + nama).classList.remove('tab-nonaktif');
+        }
+
+        function adminKeluar() {
+            if (confirm("Yakin ingin keluar dari panel admin?")) {
+                localStorage.removeItem('userAktif');
+                window.location.assign('masuk.html');
+            }
+        }
+    </script>
+</body>
+</html>
